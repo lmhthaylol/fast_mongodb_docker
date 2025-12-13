@@ -1,0 +1,8 @@
+fastapi~=0.123.5
+uvicorn[standard]
+motor~=3.7.1
+pydantic~=2.12.5
+typing_extensions~=4.15.0
+pymongo~=4.15.5
+h11~=0.16.0
+starlette~=0.50.0

@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapi-mongo-deployment
+  labels: {app: fastapi-app}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: fastapi-app}}
+  template:
+    metadata: {labels: {app: fastapi-app}}
+    spec:
+      containers:
+      - name: fastapi-container
+        image: us-central1-docker.pkg.dev/fastapi-mongodb-docker/fastapi-mongodb-docker/app:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: mongo-atlas-credentials
+              key: MONGODB_URI
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapi-mongo-service
+spec:
+  selector: {app: fastapi-app}
+  ports:
+    - {protocol: TCP, port: 80, targetPort: 8000}
+  type: LoadBalancer
