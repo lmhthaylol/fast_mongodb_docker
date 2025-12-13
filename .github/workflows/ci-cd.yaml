@@ -1,0 +1,51 @@
+name: Deploy FastAPI to GKE via GitHub Actions
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  PROJECT_ID: fastapi-mongodb-docker
+  GKE_CLUSTER: autopilot-cluster-1
+  GKE_ZONE: us-central1
+  REPOSITORY_NAME: fastapi-mongodb-docker
+  IMAGE_NAME: app
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Build and Push Docker Image (Artifact Registry)
+        run: |
+          IMAGE_NAME="us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/fastapi-mongodb-docker/app:latest"
+          
+          gcloud auth configure-docker us-central1-docker.pkg.dev
+
+          docker build -t $IMAGE_NAME .
+          docker push $IMAGE_NAME
+
+      - name: Get GKE Credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ secrets.GKE_CLUSTER_NAME }}
+          location: ${{ secrets.GKE_CLUSTER_LOCATION }}
+
+      - name: Apply Kubernetes Manifests
+        run: |
+          kubectl apply -f k8s/mongodb-secret.yaml 
+          kubectl apply -f k8s/deployment-service.yaml
