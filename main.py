@@ -10,7 +10,7 @@ from config.connection import book_collection
 from schema.schema import BookCollection
 
 app = FastAPI(
-    title="Book API mangage"
+    title="Book API"
 )
 
 
