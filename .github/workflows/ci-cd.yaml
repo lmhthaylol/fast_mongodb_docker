@@ -1,9 +1,9 @@
-name: Deploy FastAPI to GKE via GitHub Actions
+name: Deploy FastAPI to GKE by GitHub Actions
 
 on:
   push:
     branches:
-      - master
+      - main
 
 env:
   PROJECT_ID: fastapi-mongodb-docker
@@ -32,7 +32,7 @@ jobs:
 
       - name: Build and Push Docker Image (Artifact Registry)
         run: |
-          IMAGE_NAME="us-central1-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY_NAME }}/${{ env.IMAGE_NAME }}:latest"
+          IMAGE_NAME="us-central1-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY_NAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
           
           gcloud auth configure-docker us-central1-docker.pkg.dev
 
@@ -44,6 +44,11 @@ jobs:
         with:
           cluster_name: ${{ env.GKE_CLUSTER }}
           location: ${{ env.GKE_ZONE }}
+
+      - name: 'Update K8s Deployment Image'
+        run: |
+            sed -i "s|us-central1-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY_NAME }}/${{ env.IMAGE_NAME }}:latest|us-central1-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY_NAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}|g" k8s/deployment-service.yaml
+
 
       - name: Apply Kubernetes Manifests
         run: |
