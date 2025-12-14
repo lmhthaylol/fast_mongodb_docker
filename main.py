@@ -13,6 +13,9 @@ app = FastAPI(
     title="Book API"
 )
 
+@app.get("/")
+async def root():
+    return {"status": "ok", "message": "Service is running"}
 
 # Endpoint READ ALL
 @app.get("/books")
