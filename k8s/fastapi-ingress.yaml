@@ -6,10 +6,6 @@ metadata:
     networking.gke.io/managed-certificates: fastapi-booknjfkn-cert
     kubernetes.io/ingress.class: gce
 spec:
-  tls:
-    - hosts:
-        - booknjfkn.shop
-        - www.booknjfkn.shop
   rules:
     - host: booknjfkn.shop
       http:
