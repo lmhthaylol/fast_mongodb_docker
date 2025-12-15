@@ -1,3 +1,13 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: fastapi-api-key-secret
+type: Opaque
+data:
+  API_KEY: "WU9VUl9TRUNSRVRfQVBJX0tFWV9IRVJF"
+
+---
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -20,7 +30,14 @@ spec:
             secretKeyRef:
               name: mongo-atlas-credentials
               key: MONGODB_URI
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: fastapi-api-key-secret
+              key: API_KEY
+
 ---
+
 apiVersion: v1
 kind: Service
 metadata:

@@ -6,3 +6,4 @@ typing_extensions~=4.15.0
 pymongo~=4.15.5
 h11~=0.16.0
 starlette~=0.50.0
+python-dotenv~=1.2.1

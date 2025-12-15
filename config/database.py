@@ -7,3 +7,4 @@ client = AsyncIOMotorClient(url)
 
 db = client.todo_db
 collection_name = db["collection_name"]
+key_collection = db["api_keys"]

@@ -1,0 +1,9 @@
+# Bỏ qua các file .env
+.env
+
+# Bỏ qua các file do Python tạo ra
+__pycache__/
+*.pyc
+
+# Bỏ qua thư mục môi trường ảo
+venv/
