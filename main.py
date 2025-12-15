@@ -12,27 +12,11 @@ from config.connection import book_collection
 from schema.schema import BookCollection
 
 from fastapi import FastAPI
-from dotenv import load_dotenv
-import os
 
-
-try:
-    load_dotenv()
-except Exception as e:
-    print(f"Warning: Could not load .env file: {e}")
-
-
-MASTER_KEY = os.getenv("SECRET_API_KEY_MASTER")
-
-
-if not MASTER_KEY:
-    raise EnvironmentError(
-        "Lỗi: Biến môi trường 'SECRET_API_KEY_MASTER' chưa được thiết lập."
-    )
 
 
 app = FastAPI(
-    title="Book API"
+    title="Book API key "
 )
 
 
