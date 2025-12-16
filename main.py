@@ -1,6 +1,6 @@
 from bson import ObjectId
 from fastapi import FastAPI, HTTPException, Body, Depends
-from fastapi.security import APIKeyHeader
+from fastapi.security import APIKeyHeader, OAuth2PasswordRequestForm
 
 from h11 import Response
 from pymongo import ReturnDocument
@@ -44,7 +44,7 @@ async def register_user(user_data: UserRegister):
 
 
 @app.post("/auth/login")
-async def login_for_access_token(form_data: UserLogin):
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
 
     user_data = await users_collection.find_one({"username": form_data.username})
 
@@ -62,7 +62,6 @@ async def login_for_access_token(form_data: UserLogin):
         "access_token": access_token,
         "token_type": "bearer",
     }
-
 # ------------------------- PROTECTED ROUTE -------------------------
 
 @app.get("/secret-data")
