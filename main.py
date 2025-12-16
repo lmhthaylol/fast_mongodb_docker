@@ -6,9 +6,11 @@ from h11 import Response
 from pymongo import ReturnDocument
 from starlette import status
 
-from config.security import get_api_key
+from config.jwt_depen import get_current_user
+from config.security import get_api_key, get_password_hash, verify_password, create_access_token
 from model.book import Book, UpdateBook
-from config.connection import book_collection
+from config.connection import book_collection, users_collection
+from model.user import UserRegister, UserLogin, CurrentUser
 from schema.schema import BookCollection
 
 from fastapi import FastAPI
@@ -19,6 +21,57 @@ app = FastAPI(
     title="Book API key "
 )
 
+
+# ------------------------- AUTH ROUTES -------------------------
+@app.post("/auth/register", status_code=status.HTTP_201_CREATED)
+async def register_user(user_data: UserRegister):
+    # find user
+    if await users_collection.find_one({"username": user_data.username}):
+        raise HTTPException(status_code=400, detail="Tên đăng nhập đã tồn tại")
+
+    # hash pass
+    hashed_password = get_password_hash(user_data.password)
+
+    user_db_data = {
+        "username": user_data.username,
+        "email": user_data.email,
+        "role": user_data.role,
+        "hashed_password": hashed_password
+    }
+
+    await users_collection.insert_one(user_db_data)
+    return {"message": "Đăng ký thành công", "username": user_data.username}
+
+
+@app.post("/auth/login")
+async def login_for_access_token(form_data: UserLogin):
+
+    user_data = await users_collection.find_one({"username": form_data.username})
+
+    if not user_data:
+        raise HTTPException(status_code=400, detail="Thông tin đăng nhập không hợp lệ")
+
+    if not verify_password(form_data.password, user_data["hashed_password"]):
+        raise HTTPException(status_code=400, detail="Thông tin đăng nhập không hợp lệ")
+
+    access_token = create_access_token(
+        data={"sub": user_data["username"], "role": user_data["role"]}
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+    }
+
+# ------------------------- PROTECTED ROUTE -------------------------
+
+@app.get("/secret-data")
+async def get_secret_data(current_user: CurrentUser = Depends(get_current_user)):
+    return {
+        "message": f" {current_user.username}",
+        "user_role": current_user.role,
+        "email": current_user.email
+    }
 
 @app.get("/")
 async def root():
@@ -33,7 +86,7 @@ async def get_all_books(api_key: str = Depends(get_api_key)):
 
 # Endpoint READ
 @app.get("/books/{book_id}", response_model=Book)
-async def get_book(book_id):
+async def get_book(book_id, str= Depends(get_current_user)):
     if (
             book := await book_collection.find_one({"_id": ObjectId(book_id)})
     ) is not None:

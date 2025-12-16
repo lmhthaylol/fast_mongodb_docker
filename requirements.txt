@@ -7,3 +7,7 @@ pymongo~=4.15.5
 h11~=0.16.0
 starlette~=0.50.0
 python-dotenv~=1.2.1
+fastapi-users[mongodb]
+beanie
+PyJWT~=2.10.1
+passlib~=1.7.4
