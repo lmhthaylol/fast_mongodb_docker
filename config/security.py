@@ -1,7 +1,10 @@
 import os
-from fastapi import Security, HTTPException
+from fastapi import Security, HTTPException, Depends
 from fastapi.security import APIKeyHeader
+from starlette import status
 from starlette.status import HTTP_403_FORBIDDEN
+
+from config.jwt_depen import oauth2_scheme
 
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=True)
 
@@ -41,6 +44,7 @@ REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)

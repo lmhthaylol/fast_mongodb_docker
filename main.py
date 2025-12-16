@@ -16,7 +16,7 @@ from schema.schema import BookCollection
 
 from fastapi import FastAPI
 
-
+from schema.tokenRefresh import TokenRefresh
 
 app = FastAPI(
     title="Book API key "
@@ -72,55 +72,28 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     }
 
 
-# main.py
-
-from fastapi import FastAPI, Depends, HTTPException, status, Body
-from config.security import (
-    get_password_hash,
-    verify_password,
-    create_access_token,
-    create_refresh_token  # 👈 Import hàm mới
-)
-from config.connection import users_collection
-from config.jwt_dependency import get_current_user
-from model.user import UserRegister, UserLogin, CurrentUser
-
-
-# ... (Import các Book Models/Schemas khác) ...
-
-# Tạo một Schema để nhận Refresh Token từ client
-class TokenRefresh(BaseModel):
-    refresh_token: str
-
-
-app = FastAPI(title="Book Loan API (PyJWT + Refresh Token)")
-
-
-# ... (Endpoint register giữ nguyên) ...
-
-@app.post("/auth/login")
-async def login_for_access_and_refresh_token(form_data: UserLogin):
-    # ... (Tìm user và verify mật khẩu giữ nguyên) ...
-    user_data = await users_collection.find_one({"username": form_data.username})
-
-    if not user_data or not verify_password(form_data.password, user_data["hashed_password"]):
-        raise HTTPException(status_code=400, detail="Thông tin đăng nhập không hợp lệ")
-
-    # 1. Tạo Access Token (ngắn hạn)
-    access_token = create_access_token(
-        data={"sub": user_data["username"], "role": user_data["role"]}
-    )
-
-    # 2. Tạo Refresh Token (dài hạn)
-    refresh_token = create_refresh_token(
-        data={"sub": user_data["username"]}  # Refresh Token chỉ cần sub để xác định người dùng
-    )
-
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,  # 👈 Trả về cả hai token
-        "token_type": "bearer",
-    }
+# @app.post("/auth/login")
+# async def login_for_access_and_refresh_token(form_data: UserLogin):
+#     user_data = await users_collection.find_one({"username": form_data.username})
+#
+#     if not user_data or not verify_password(form_data.password, user_data["hashed_password"]):
+#         raise HTTPException(status_code=400, detail="Thông tin đăng nhập không hợp lệ")
+#
+#     # 1. Tạo Access Token (ngắn hạn)
+#     access_token = create_access_token(
+#         data={"sub": user_data["username"], "role": user_data["role"]}
+#     )
+#
+#     # 2. Tạo Refresh Token (dài hạn)
+#     refresh_token = create_refresh_token(
+#         data={"sub": user_data["username"]}
+#     )
+#
+#     return {
+#         "access_token": access_token,
+#         "refresh_token": refresh_token,
+#         "token_type": "bearer",
+#     }
 
 
 # ------------------------- REFRESH TOKEN ROUTE -------------------------
