@@ -18,6 +18,12 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> CurrentUser:
             detail="Token khong hop le hoac het han",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    if payload.get("token_type") != "access":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="yeu cau access token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     # get user
     username = payload.get("sub")

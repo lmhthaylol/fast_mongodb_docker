@@ -7,7 +7,8 @@ from pymongo import ReturnDocument
 from starlette import status
 
 from config.jwt_depen import get_current_user
-from config.security import get_api_key, get_password_hash, verify_password, create_access_token
+from config.security import get_api_key, get_password_hash, verify_password, create_access_token, create_refresh_token, \
+    decode_access_token
 from model.book import Book, UpdateBook
 from config.connection import book_collection, users_collection
 from model.user import UserRegister, UserLogin, CurrentUser
@@ -54,14 +55,110 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     if not verify_password(form_data.password, user_data["hashed_password"]):
         raise HTTPException(status_code=400, detail="Thông tin đăng nhập không hợp lệ")
 
+    # Access Token
     access_token = create_access_token(
         data={"sub": user_data["username"], "role": user_data["role"]}
     )
 
+    # Refresh Token
+    refresh_token = create_refresh_token(
+        data={"sub": user_data["username"]}
+    )
+
     return {
         "access_token": access_token,
+        "refresh_token": refresh_token,
         "token_type": "bearer",
     }
+
+
+# main.py
+
+from fastapi import FastAPI, Depends, HTTPException, status, Body
+from config.security import (
+    get_password_hash,
+    verify_password,
+    create_access_token,
+    create_refresh_token  # 👈 Import hàm mới
+)
+from config.connection import users_collection
+from config.jwt_dependency import get_current_user
+from model.user import UserRegister, UserLogin, CurrentUser
+
+
+# ... (Import các Book Models/Schemas khác) ...
+
+# Tạo một Schema để nhận Refresh Token từ client
+class TokenRefresh(BaseModel):
+    refresh_token: str
+
+
+app = FastAPI(title="Book Loan API (PyJWT + Refresh Token)")
+
+
+# ... (Endpoint register giữ nguyên) ...
+
+@app.post("/auth/login")
+async def login_for_access_and_refresh_token(form_data: UserLogin):
+    # ... (Tìm user và verify mật khẩu giữ nguyên) ...
+    user_data = await users_collection.find_one({"username": form_data.username})
+
+    if not user_data or not verify_password(form_data.password, user_data["hashed_password"]):
+        raise HTTPException(status_code=400, detail="Thông tin đăng nhập không hợp lệ")
+
+    # 1. Tạo Access Token (ngắn hạn)
+    access_token = create_access_token(
+        data={"sub": user_data["username"], "role": user_data["role"]}
+    )
+
+    # 2. Tạo Refresh Token (dài hạn)
+    refresh_token = create_refresh_token(
+        data={"sub": user_data["username"]}  # Refresh Token chỉ cần sub để xác định người dùng
+    )
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,  # 👈 Trả về cả hai token
+        "token_type": "bearer",
+    }
+
+
+# ------------------------- REFRESH TOKEN ROUTE -------------------------
+
+@app.post("/auth/refresh")
+async def refresh_access_token(token_data: TokenRefresh):
+
+    # 1. decode Refresh Token
+    payload = decode_access_token(token_data.refresh_token)
+
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh Token không hợp lệ hoặc đã hết hạn",
+        )
+
+    if payload.get("token_type") != "refresh":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token không phải là Refresh Token",
+        )
+
+    username = payload.get("sub")
+    user_data = await users_collection.find_one({"username": username})
+
+    if user_data is None:
+        raise HTTPException(status_code=401, detail="Người dùng không tồn tại")
+
+    new_access_token = create_access_token(
+        data={"sub": user_data["username"], "role": user_data["role"]}
+    )
+
+    return {
+        "access_token": new_access_token,
+        "token_type": "bearer",
+    }
+
+
 # ------------------------- PROTECTED ROUTE -------------------------
 
 @app.get("/secret-data")
