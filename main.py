@@ -66,8 +66,9 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     refresh_token = create_refresh_token(
         data={"sub": user_data["username"]}
     )
+
     await store_refresh_token(
-        user_id=user.id,
+        user_id=str(user_data["_id"]),
         token=refresh_token,
         expires_in_days=7
     )
