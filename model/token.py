@@ -6,4 +6,4 @@ class UserToken(BaseModel):
     user_id: UUID
     refresh_token: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    expires_at: datetime
+    #expires_at: datetime
