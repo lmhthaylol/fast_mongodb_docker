@@ -9,6 +9,7 @@ from starlette import status
 from config.jwt_depen import get_current_user
 from config.security import get_api_key, get_password_hash, verify_password, create_access_token, create_refresh_token, \
     decode_access_token
+from model import user
 from model.book import Book, UpdateBook
 from config.connection import book_collection, users_collection
 from model.user import UserRegister, UserLogin, CurrentUser
@@ -17,6 +18,7 @@ from schema.schema import BookCollection
 from fastapi import FastAPI
 
 from schema.tokenRefresh import TokenRefresh
+from service.auth_service import store_refresh_token
 
 app = FastAPI(
     title="Book API key "
@@ -63,6 +65,11 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     # Refresh Token
     refresh_token = create_refresh_token(
         data={"sub": user_data["username"]}
+    )
+    await store_refresh_token(
+        user_id=user.id,
+        token=refresh_token,
+        expires_in_days=7
     )
 
     return {

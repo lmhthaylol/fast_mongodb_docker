@@ -15,3 +15,4 @@ db = client[DATABASE_NAME]
 book_collection = db.get_collection('books') 
 key_collection = db.get_collection('api_keys')
 users_collection = db.get_collection('users')
+token_collection = db.get_collection('refresh_tokens')
