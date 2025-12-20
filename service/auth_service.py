@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from config.connection import db
+from config.connection import db, token_collection
 
 
 async def store_refresh_token(user_id: str, token: str, expires_in_days: int):
@@ -11,4 +11,4 @@ async def store_refresh_token(user_id: str, token: str, expires_in_days: int):
         "expires_at": expires_at,
         "created_at": datetime.utcnow()
     }
-    await db.tokens.insert_one(token_data)
+    await token_collection.insert_one(token_data)
